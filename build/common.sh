@@ -482,6 +482,7 @@ function kube::build::docker_build() {
 
   kube::log::status "Building Docker image ${image}"
   local docker_output
+  echo ${build_cmd[@]}
   docker_output=$("${build_cmd[@]}" 2>&1) || {
     cat <<EOF >&2
 +++ Docker build command failed for ${image}
