@@ -16,11 +16,11 @@ func FillupMemAllocationPriorityMap(
 	if node == nil {
 		return schedulerapi.HostPriority{}, fmt.Errorf("node not found")
 	}
-	allocatable := nodeInfo.AllocatableResource()
-	memAlloc := allocatable.Memory
+	requestedRes := nodeInfo.RequestedResource()
+	memRequested := requestedRes.Memory
 
 	return schedulerapi.HostPriority{
 		Host:  node.Name,
-		Score: int(memAlloc),
+		Score: int(memRequested),
 	}, nil
 }
