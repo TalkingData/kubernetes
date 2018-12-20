@@ -92,7 +92,7 @@ var _ = SchedulingQueue(&FIFO{}) // Making sure that FIFO implements SchedulingQ
 
 // Add adds a pod to the FIFO.
 func (f *FIFO) Add(pod *v1.Pod) error {
-	return f.FIFO.Add(pod)
+	return f.FIFOiAdd(pod)
 }
 
 // AddIfNotPresent adds a pod to the FIFO if it is absent in the FIFO.

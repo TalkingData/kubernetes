@@ -57,6 +57,7 @@ type NodeInfo struct {
 	// didn't get it as scheduled yet.
 	requestedResource *Resource
 	nonzeroRequest    *Resource
+
 	// We store allocatedResources (which is Node.Status.Allocatable.*) explicitly
 	// as int64, to avoid conversions and accessing map.
 	allocatableResource *Resource
@@ -83,6 +84,8 @@ type NodeInfo struct {
 	// Whenever NodeInfo changes, generation is bumped.
 	// This is used to avoid cloning it if the object didn't change.
 	generation int64
+
+	ReclaimedResourceCache ResourceMonitor
 }
 
 //initializeNodeTransientInfo initializes transient information pertaining to node.
@@ -411,6 +414,18 @@ func (n *NodeInfo) AllocatableResource() Resource {
 	return *n.allocatableResource
 }
 
+// ReclaimedResource returns reclaimed resources on a given node
+func (n *NodeInfo) ReclaimedResource() Resource {
+	if n == nil {
+		return emptyResource
+	}
+	res, err := n.ReclaimedResourceCache.Get(n)
+	if err != nil {
+		return Resource{}
+	}
+	return *res
+}
+
 // SetAllocatableResource sets the allocatableResource information of given node.
 func (n *NodeInfo) SetAllocatableResource(allocatableResource *Resource) {
 	n.allocatableResource = allocatableResource
@@ -699,4 +714,8 @@ func (n *NodeInfo) Filter(pod *v1.Pod) bool {
 		}
 	}
 	return false
+}
+
+type ResourceMonitor interface {
+	Get(*NodeInfo) (*Resource, error)
 }

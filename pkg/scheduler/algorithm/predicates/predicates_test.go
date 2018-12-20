@@ -96,6 +96,21 @@ func PredicateMetadata(p *v1.Pod, nodeInfo map[string]*schedulercache.NodeInfo) 
 	return pm.GetMetadata(p, nodeInfo)
 }
 
+// NewNodeInfo returns a ready to use empty NodeInfo object.
+// If any pods are given in arguments, their information will be aggregated in
+// the returned object.
+func newNodeInfo(pods ...*v1.Pod) *schedulercache.NodeInfo {
+	nodeInfo := schedulercache.NewNodeInfo(pods...)
+	nodeInfo.ReclaimedResourceCache = &fakeResMonitor{}
+	return nodeInfo
+}
+
+type fakeResMonitor struct{}
+
+func (f *fakeResMonitor) Get(n *schedulercache.NodeInfo) (*schedulercache.Resource, error) {
+	return nil, nil
+}
+
 func TestPodFitsResources(t *testing.T) {
 	enoughPodsTests := []struct {
 		pod                      *v1.Pod
