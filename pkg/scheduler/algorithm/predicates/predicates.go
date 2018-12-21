@@ -757,11 +757,11 @@ func PodFitsResources(pod *v1.Pod, meta algorithm.PredicateMetadata, nodeInfo *s
 
 	allocatable := nodeInfo.AllocatableResource()
 	reclaimed := nodeInfo.ReclaimedResource()
-	if podRequest.MilliCPU < reclaimed.MilliCPU {
-		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceCPU, podRequest.MilliCPU, reclaimed.MilliCPU, allocatable.MilliCPU))
+	if podRequest.MilliCPU > reclaimed.MilliCPU {
+		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceCPU, podRequest.MilliCPU, nodeInfo.RequestedResource().MilliCPU, allocatable.MilliCPU))
 	}
-	if podRequest.Memory < reclaimed.Memory {
-		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceMemory, podRequest.Memory, reclaimed.Memory, allocatable.Memory))
+	if podRequest.Memory > reclaimed.Memory {
+		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceMemory, podRequest.Memory, nodeInfo.RequestedResource().Memory, allocatable.Memory))
 	}
 	if allocatable.EphemeralStorage < podRequest.EphemeralStorage+nodeInfo.RequestedResource().EphemeralStorage {
 		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceEphemeralStorage, podRequest.EphemeralStorage, nodeInfo.RequestedResource().EphemeralStorage, allocatable.EphemeralStorage))
