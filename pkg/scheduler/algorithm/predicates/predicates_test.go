@@ -183,7 +183,7 @@ func TestPodFitsResources(t *testing.T) {
 			pod: newResourceInitPod(newResourcePod(schedulercache.Resource{MilliCPU: 1, Memory: 1}), schedulercache.Resource{MilliCPU: 1, Memory: 1}, schedulercache.Resource{MilliCPU: 1, Memory: 1}),
 			nodeInfo: newNodeInfo(
 				newResourcePod(schedulercache.Resource{MilliCPU: 9, Memory: 19})),
-
+			fits: true,
 			name: "multiple init containers fit because it's the max, not sum, of containers and init containers",
 		},
 		{
