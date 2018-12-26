@@ -85,7 +85,7 @@ type NodeInfo struct {
 	// This is used to avoid cloning it if the object didn't change.
 	generation int64
 
-	ReclaimedResourceCache ResourceMonitor
+	ReclaimedResourceCache ResourceCache
 }
 
 //initializeNodeTransientInfo initializes transient information pertaining to node.
@@ -266,13 +266,14 @@ func (r *Resource) SetMaxResource(rl v1.ResourceList) {
 // the returned object.
 func NewNodeInfo(pods ...*v1.Pod) *NodeInfo {
 	ni := &NodeInfo{
-		requestedResource:   &Resource{},
-		nonzeroRequest:      &Resource{},
-		allocatableResource: &Resource{},
-		TransientInfo:       NewTransientSchedulerInfo(),
-		generation:          nextGeneration(),
-		usedPorts:           make(HostPortInfo),
-		imageStates:         make(map[string]*ImageStateSummary),
+		requestedResource:      &Resource{},
+		nonzeroRequest:         &Resource{},
+		allocatableResource:    &Resource{},
+		TransientInfo:          NewTransientSchedulerInfo(),
+		generation:             nextGeneration(),
+		usedPorts:              make(HostPortInfo),
+		imageStates:            make(map[string]*ImageStateSummary),
+		ReclaimedResourceCache: &FakeResourceMonitor{},
 	}
 	for _, pod := range pods {
 		ni.AddPod(pod)
@@ -460,6 +461,7 @@ func (n *NodeInfo) Clone() *NodeInfo {
 		usedPorts:               make(HostPortInfo),
 		imageStates:             n.imageStates,
 		generation:              n.generation,
+		ReclaimedResourceCache:  n.ReclaimedResourceCache,
 	}
 	if len(n.pods) > 0 {
 		clone.pods = append([]*v1.Pod(nil), n.pods...)
@@ -714,8 +716,4 @@ func (n *NodeInfo) Filter(pod *v1.Pod) bool {
 		}
 	}
 	return false
-}
-
-type ResourceMonitor interface {
-	Get(*NodeInfo) (*Resource, error)
 }
