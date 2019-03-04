@@ -49,6 +49,8 @@ type NodeInfo struct {
 	// as int64, to avoid conversions and accessing map.
 	allocatableResource *Resource
 
+	nrm NodeResourceMonitor
+
 	// Cached tains of the node for faster lookup.
 	taints    []v1.Taint
 	taintsErr error
@@ -60,6 +62,10 @@ type NodeInfo struct {
 	// Whenever NodeInfo changes, generation is bumped.
 	// This is used to avoid cloning it if the object didn't change.
 	generation int64
+}
+
+type NodeResourceMonitor interface {
+	GetResource() *Resource
 }
 
 // Resource is a collection of compute resource.
@@ -169,11 +175,17 @@ func NewNodeInfo(pods ...*v1.Pod) *NodeInfo {
 		allocatableResource: &Resource{},
 		generation:          0,
 		usedPorts:           make(util.HostPortInfo),
+		nrm:                 nodeResourceMonFactory(),
 	}
 	for _, pod := range pods {
 		ni.AddPod(pod)
 	}
 	return ni
+}
+
+func nodeResourceMonFactory() NodeResourceMonitor {
+	// default is owl
+	return OWLNodeInfo{}
 }
 
 // Node returns overall information about this node.

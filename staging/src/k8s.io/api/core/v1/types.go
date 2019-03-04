@@ -2930,6 +2930,8 @@ type PodSpec struct {
 	// If not specified, the pod will be dispatched by default scheduler.
 	// +optional
 	SchedulerName string `json:"schedulerName,omitempty" protobuf:"bytes,19,opt,name=schedulerName"`
+	// If specified, the pod will be scheduled according dynamic policy
+	DynamicScheduler *bool `json:"dynamicScheduler,omitempty" protobuf:"varint,3,opt,name=dynamicScheduler"`
 	// If specified, the pod's tolerations.
 	// +optional
 	Tolerations []Toleration `json:"tolerations,omitempty" protobuf:"bytes,22,opt,name=tolerations"`
