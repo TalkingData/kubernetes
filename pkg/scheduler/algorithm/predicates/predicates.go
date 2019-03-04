@@ -737,6 +737,9 @@ func PodFitsResources(pod *v1.Pod, meta algorithm.PredicateMetadata, nodeInfo *s
 	}
 
 	allocatable := nodeInfo.AllocatableResource()
+	if pod.Spec.DynamicScheduler {
+		allocatable = nodeInfo.AllocatableResourceByMon()
+	}
 	if allocatable.MilliCPU < podRequest.MilliCPU+nodeInfo.RequestedResource().MilliCPU {
 		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceCPU, podRequest.MilliCPU, nodeInfo.RequestedResource().MilliCPU, allocatable.MilliCPU))
 	}
