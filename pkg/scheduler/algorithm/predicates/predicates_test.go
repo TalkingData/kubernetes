@@ -82,6 +82,22 @@ func newResourcePod(usage ...schedulercache.Resource) *v1.Pod {
 	}
 }
 
+func newResourcePod1(usage ...schedulercache.Resource) *v1.Pod {
+	containers := []v1.Container{}
+	for _, req := range usage {
+		containers = append(containers, v1.Container{
+			Resources: v1.ResourceRequirements{Requests: req.ResourceList()},
+		})
+	}
+	ds := true
+	return &v1.Pod{
+		Spec: v1.PodSpec{
+			Containers:       containers,
+			DynamicScheduler: &ds,
+		},
+	}
+}
+
 func newResourceInitPod(pod *v1.Pod, usage ...schedulercache.Resource) *v1.Pod {
 	pod.Spec.InitContainers = newResourcePod(usage...).Spec.Containers
 	return pod
@@ -330,9 +346,9 @@ func TestPodFitsResources(t *testing.T) {
 				schedulercache.Resource{MilliCPU: 1, Memory: 1, ScalarResources: map[v1.ResourceName]int64{extendedResourceB: 1}}),
 			nodeInfo: schedulercache.NewNodeInfo(
 				newResourcePod(schedulercache.Resource{MilliCPU: 0, Memory: 0})),
-			fits: true,
+			fits:                     true,
 			ignoredExtendedResources: sets.NewString(string(extendedResourceB)),
-			test: "skip checking ignored extended resource",
+			test:                     "skip checking ignored extended resource",
 		},
 	}
 
@@ -466,6 +482,48 @@ func TestPodFitsResources(t *testing.T) {
 		}
 	}
 
+	dynamicSchedulerPodsTests := []struct {
+		pod      *v1.Pod
+		nodeInfo *schedulercache.NodeInfo
+		fits     bool
+		test     string
+		reasons  []algorithm.PredicateFailureReason
+	}{
+		{
+			pod:      newResourcePod1(schedulercache.Resource{MilliCPU: 1, Memory: 1}),
+			nodeInfo: newNodeInfo(),
+			fits:     true,
+			test:     "pod fit",
+		},
+	}
+
+	for _, test := range dynamicSchedulerPodsTests {
+		node := v1.Node{Status: v1.NodeStatus{Capacity: makeResources(10, 20, 0, 32, 5, 20, 5).Capacity, Allocatable: makeAllocatableResources(0, 0, 0, 32, 5, 20, 5)}}
+		test.nodeInfo.SetNode(&node)
+		fits, reasons, err := PodFitsResources(test.pod, PredicateMetadata(test.pod, nil), test.nodeInfo)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", test.test, err)
+		}
+		if !fits && !reflect.DeepEqual(reasons, test.reasons) {
+			t.Errorf("%s: unexpected failure reasons: %v, want: %v", test.test, reasons, test.reasons)
+		}
+		if fits != test.fits {
+			t.Errorf("%s: expected: %v got %v", test.test, test.fits, fits)
+		}
+	}
+}
+
+type fakeNodeResMon struct {
+}
+
+func (f *fakeNodeResMon) GetResource(node *v1.Node) *schedulercache.Resource {
+	return &schedulercache.Resource{MilliCPU: 1, Memory: 1}
+}
+
+func newNodeInfo(pods ...*v1.Pod) *schedulercache.NodeInfo {
+	nodeInfo := schedulercache.NewNodeInfo(pods...)
+	nodeInfo.SetNodeResourceMon(&fakeNodeResMon{})
+	return nodeInfo
 }
 
 func TestPodFitsHost(t *testing.T) {
@@ -2844,7 +2902,7 @@ func TestInterPodAffinityWithMultipleNodes(t *testing.T) {
 				"machine3": false,
 			},
 			nodesExpectAffinityFailureReasons: [][]algorithm.PredicateFailureReason{nil, nil, {ErrPodAffinityNotMatch, ErrPodAffinityRulesNotMatch}},
-			test: "A pod can be scheduled onto all the nodes that have the same topology key & label value with one of them has an existing pod that match the affinity rules",
+			test:                              "A pod can be scheduled onto all the nodes that have the same topology key & label value with one of them has an existing pod that match the affinity rules",
 		},
 		{
 			pod: &v1.Pod{

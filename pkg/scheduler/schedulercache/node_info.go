@@ -65,7 +65,7 @@ type NodeInfo struct {
 }
 
 type NodeResourceMonitor interface {
-	GetResource() *Resource
+	GetResource(node *v1.Node) *Resource
 }
 
 // Resource is a collection of compute resource.
@@ -185,7 +185,12 @@ func NewNodeInfo(pods ...*v1.Pod) *NodeInfo {
 
 func nodeResourceMonFactory() NodeResourceMonitor {
 	// default is owl
-	return OWLNodeInfo{}
+	return &OWLNodeInfo{}
+}
+
+// Only for test.
+func (n *NodeInfo) SetNodeResourceMon(nrm NodeResourceMonitor) {
+	n.nrm = nrm
 }
 
 // Node returns overall information about this node.
@@ -274,6 +279,18 @@ func (n *NodeInfo) AllocatableResource() Resource {
 		return emptyResource
 	}
 	return *n.allocatableResource
+}
+
+func (n *NodeInfo) AllocatableResourceByMon() Resource {
+	if n == nil {
+		return emptyResource
+	}
+
+	res := n.nrm.GetResource(n.node)
+	alloc := *n.allocatableResource
+	alloc.Memory = res.Memory
+	alloc.MilliCPU = res.MilliCPU
+	return alloc
 }
 
 // SetAllocatableResource sets the allocatableResource information of given node.
