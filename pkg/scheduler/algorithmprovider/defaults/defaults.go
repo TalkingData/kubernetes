@@ -33,6 +33,7 @@ import (
 const (
 	// ClusterAutoscalerProvider defines the default autoscaler provider
 	ClusterAutoscalerProvider = "ClusterAutoscalerProvider"
+	TDProvider                = "TalkintDataProvider"
 )
 
 func init() {
@@ -209,6 +210,9 @@ func registerAlgorithmProvider(predSet, priSet sets.String) {
 	factory.RegisterAlgorithmProvider(factory.DefaultProvider, predSet, priSet)
 	// Cluster autoscaler friendly scheduling algorithm.
 	factory.RegisterAlgorithmProvider(ClusterAutoscalerProvider, predSet,
+		copyAndReplace(priSet, "LeastRequestedPriority", "MostRequestedPriority"))
+	// TD scheduling algorith
+	factory.RegisterAlgorithmProvider(TDProvider, predSet,
 		copyAndReplace(priSet, "LeastRequestedPriority", "MostRequestedPriority"))
 }
 
